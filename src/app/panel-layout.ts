@@ -330,6 +330,7 @@ export class PanelLayoutManager implements AppModule {
           </button>
         </div>
         <div class="header-right">
+          <button class="trading-cmd-btn" id="tradingCmdBtn" title="Trading Command Center">🏦 Trading</button>
           <button class="search-btn" id="searchBtn"><kbd>⌘K</kbd> ${t('header.search')}</button>
           ${this.ctx.isDesktopApp ? '' : `<button class="copy-link-btn" id="copyLinkBtn">${t('header.copyLink')}</button>`}
           ${this.ctx.isDesktopApp ? '' : `<button class="fullscreen-btn" id="fullscreenBtn" title="${t('header.fullscreen')}">⛶</button>`}

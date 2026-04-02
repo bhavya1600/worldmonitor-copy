@@ -1,4 +1,5 @@
 import type { AppContext, AppModule } from '@/app/app-context';
+import type { TradingCommandCenter } from '@/components/trading/TradingCommandCenter';
 import type { AirlineIntelPanel } from '@/components/AirlineIntelPanel';
 import type { CustomWidgetPanel } from '@/components/CustomWidgetPanel';
 import { openWidgetChatModal } from '@/components/WidgetChatModal';
@@ -324,6 +325,15 @@ export class EventHandlerManager implements AppModule {
     document.getElementById('searchBtn')?.addEventListener('click', () => {
       track('search-open', { source: 'desktop' });
       openSearch();
+    });
+
+    document.getElementById('tradingCmdBtn')?.addEventListener('click', () => {
+      import('@/components/trading/TradingCommandCenter').then(({ TradingCommandCenter }) => {
+        if (!(window as unknown as Record<string, unknown>).__tradingCenter) {
+          (window as unknown as Record<string, unknown>).__tradingCenter = new TradingCommandCenter();
+        }
+        ((window as unknown as Record<string, unknown>).__tradingCenter as TradingCommandCenter).toggle();
+      });
     });
     document.getElementById('mobileSearchBtn')?.addEventListener('click', () => {
       track('search-open', { source: 'mobile' });

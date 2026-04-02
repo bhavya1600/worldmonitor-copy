@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package worldmonitor.trading.v1;
+
+enum AgentType {
+  AGENT_TYPE_UNSPECIFIED = 0;
+  AGENT_TYPE_ORCHESTRATOR = 1;
+  AGENT_TYPE_TECHNICAL = 2;
+  AGENT_TYPE_FUNDAMENTAL = 3;
+  AGENT_TYPE_MACRO = 4;
+  AGENT_TYPE_GEOPOLITICAL = 5;
+  AGENT_TYPE_SENTIMENT = 6;
+  AGENT_TYPE_RISK_QUANT = 7;
+}
+
+enum AgentStatus {
+  AGENT_STATUS_UNSPECIFIED = 0;
+  AGENT_STATUS_IDLE = 1;
+  AGENT_STATUS_THINKING = 2;
+  AGENT_STATUS_DONE = 3;
+  AGENT_STATUS_ERROR = 4;
+}
+
+message AgentState {
+  AgentType agent_type = 1;
+  AgentStatus status = 2;
+  double confidence = 3;
+  string signal = 4;
+  string last_analysis_at = 5;
+  string summary = 6;
+}
+
+message ConsensusResult {
+  string direction = 1;
+  double conviction = 2;
+  string action = 3;
+  string reasoning = 4;
+  string risk_warning = 5;
+  repeated AgentState agent_states = 6;
+}

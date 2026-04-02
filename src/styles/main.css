@@ -791,6 +791,34 @@ canvas,
   }
 }
 
+.trading-cmd-btn {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.12), rgba(33, 150, 243, 0.08));
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #4CAF50;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.trading-cmd-btn:hover {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.18);
+}
+
+@media (max-width: 768px) {
+  .trading-cmd-btn {
+    display: none !important;
+  }
+}
+
 .search-btn {
   padding: 4px 10px;
   background: transparent;

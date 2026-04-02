@@ -158,6 +158,100 @@ function polymarketPlugin(): Plugin {
 }
 
 /**
+ * Vite dev plugin for the trading agent standalone edge functions.
+ * Routes /api/trading-agent, /api/trading-portfolio, /api/trading-report
+ * through the same handlers that run on Vercel Edge.
+ */
+function tradingAgentDevPlugin(): Plugin {
+  return {
+    name: 'trading-agent-dev',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const tradingRoutes: Record<string, string> = {
+          '/api/trading-agent': './api/trading-agent',
+          '/api/trading-portfolio': './api/trading-portfolio',
+          '/api/trading-report': './api/trading-report',
+        };
+
+        const urlPath = (req.url ?? '').split('?')[0]!;
+        const modulePath = tradingRoutes[urlPath];
+        if (!modulePath) return next();
+
+        try {
+          const mod = await server.ssrLoadModule(modulePath);
+          const handler = mod.default;
+          if (typeof handler !== 'function') {
+            res.statusCode = 500;
+            res.end('Handler not a function');
+            return;
+          }
+
+          const protocol = 'http';
+          const host = req.headers.host ?? 'localhost:3000';
+          const fullUrl = `${protocol}://${host}${req.url}`;
+
+          const headers = new Headers();
+          for (const [key, val] of Object.entries(req.headers)) {
+            if (val) headers.set(key, Array.isArray(val) ? val.join(', ') : val);
+          }
+          // Dev bypass: inject a valid API key so premium checks pass locally
+          if (!headers.has('X-WorldMonitor-Key') && !headers.has('Authorization')) {
+            const devKey = process.env.WORLDMONITOR_VALID_KEYS?.split(',')[0]?.trim() || 'dev-trading-key';
+            headers.set('X-WorldMonitor-Key', devKey);
+            // Ensure the key is in the valid set
+            if (!process.env.WORLDMONITOR_VALID_KEYS) {
+              process.env.WORLDMONITOR_VALID_KEYS = devKey;
+            }
+          }
+
+          let body: string | undefined;
+          if (req.method === 'POST' || req.method === 'PUT') {
+            body = await new Promise<string>((resolve) => {
+              let data = '';
+              req.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+              req.on('end', () => resolve(data));
+            });
+          }
+
+          const request = new Request(fullUrl, {
+            method: req.method,
+            headers,
+            body: body ?? undefined,
+          });
+
+          const response: Response = await handler(request);
+
+          res.statusCode = response.status;
+          response.headers.forEach((val: string, key: string) => {
+            res.setHeader(key, val);
+          });
+
+          if (response.body) {
+            const reader = response.body.getReader();
+            const pump = async () => {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) { res.end(); return; }
+                res.write(value);
+              }
+            };
+            await pump();
+          } else {
+            const text = await response.text();
+            res.end(text);
+          }
+        } catch (error: any) {
+          console.error(`[trading-dev] ${urlPath}:`, error.message);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
+    },
+  };
+}
+
+/**
  * Vite dev server plugin for sebuf API routes.
  *
  * Intercepts requests matching /api/{domain}/v1/* and routes them through
@@ -619,6 +713,7 @@ export default defineConfig(({ mode }) => {
       rssProxyPlugin(),
       youtubeLivePlugin(),
       gpsjamDevPlugin(),
+      tradingAgentDevPlugin(),
       sebufApiPlugin(),
       brotliPrecompressPlugin(),
       VitePWA({

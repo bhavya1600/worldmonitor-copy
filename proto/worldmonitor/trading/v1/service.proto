@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package worldmonitor.trading.v1;
+
+import "sebuf/http/annotations.proto";
+import "buf/validate/validate.proto";
+import "worldmonitor/trading/v1/portfolio.proto";
+import "worldmonitor/trading/v1/agent.proto";
+
+// Request/response for GetPortfolio
+message GetPortfolioRequest {
+  string portfolio_id = 1 [(sebuf.http.query) = { name: "portfolio_id" }];
+}
+
+message GetPortfolioResponse {
+  Portfolio portfolio = 1;
+}
+
+// Request/response for UpdatePortfolio
+message UpdatePortfolioRequest {
+  string portfolio_id = 1;
+  string name = 2;
+  double cash = 3;
+  string currency = 4;
+  repeated PortfolioHolding holdings = 5;
+}
+
+message UpdatePortfolioResponse {
+  Portfolio portfolio = 1;
+}
+
+// Request/response for ListTradeHistory
+message ListTradeHistoryRequest {
+  string portfolio_id = 1 [(sebuf.http.query) = { name: "portfolio_id" }];
+  int32 limit = 2 [(sebuf.http.query) = { name: "limit" }];
+  int32 offset = 3 [(sebuf.http.query) = { name: "offset" }];
+}
+
+message ListTradeHistoryResponse {
+  repeated TradeRecord trades = 1;
+  int32 total = 2;
+}
+
+// Request/response for GetAgentStatus
+message GetAgentStatusRequest {
+  string portfolio_id = 1 [(sebuf.http.query) = { name: "portfolio_id" }];
+}
+
+message GetAgentStatusResponse {
+  repeated AgentState agents = 1;
+  ConsensusResult latest_consensus = 2;
+}
+
+// Report types
+message TradingReport {
+  string id = 1;
+  string portfolio_id = 2;
+  string title = 3;
+  string content_markdown = 4;
+  ConsensusResult consensus = 5;
+  repeated AgentState agent_states = 6;
+  string generated_at = 7;
+  string report_type = 8;
+}
+
+message GenerateReportRequest {
+  string portfolio_id = 1 [(buf.validate.field).required = true];
+  string report_type = 2;
+}
+
+message GenerateReportResponse {
+  TradingReport report = 1;
+}
+
+message ListReportsRequest {
+  string portfolio_id = 1 [(sebuf.http.query) = { name: "portfolio_id" }];
+  int32 limit = 2 [(sebuf.http.query) = { name: "limit" }];
+}
+
+message ListReportsResponse {
+  repeated TradingReport reports = 1;
+}
+
+// TradingService provides AI-powered multi-agent portfolio analysis and trading recommendations.
+// The Chat RPC is handled separately as a streaming edge function (api/trading-agent.ts).
+service TradingService {
+  option (sebuf.http.service_config) = {base_path: "/api/trading/v1"};
+
+  rpc GetPortfolio(GetPortfolioRequest) returns (GetPortfolioResponse) {
+    option (sebuf.http.config) = {path: "/get-portfolio", method: HTTP_METHOD_GET};
+  }
+
+  rpc UpdatePortfolio(UpdatePortfolioRequest) returns (UpdatePortfolioResponse) {
+    option (sebuf.http.config) = {path: "/update-portfolio", method: HTTP_METHOD_POST};
+  }
+
+  rpc ListTradeHistory(ListTradeHistoryRequest) returns (ListTradeHistoryResponse) {
+    option (sebuf.http.config) = {path: "/list-trade-history", method: HTTP_METHOD_GET};
+  }
+
+  rpc GetAgentStatus(GetAgentStatusRequest) returns (GetAgentStatusResponse) {
+    option (sebuf.http.config) = {path: "/get-agent-status", method: HTTP_METHOD_GET};
+  }
+
+  rpc GenerateReport(GenerateReportRequest) returns (GenerateReportResponse) {
+    option (sebuf.http.config) = {path: "/generate-report", method: HTTP_METHOD_POST};
+  }
+
+  rpc ListReports(ListReportsRequest) returns (ListReportsResponse) {
+    option (sebuf.http.config) = {path: "/list-reports", method: HTTP_METHOD_GET};
+  }
+}
